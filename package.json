@@ -1,0 +1,14 @@
+{
+  "name": "webgpu-ts-sample",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.66",
+    "typescript": "^5.0.0"
+  }
+}
