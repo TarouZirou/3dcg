@@ -20,13 +20,39 @@ const quadVertexSize = 4 * 8;
 const quadPositionOffset = 0;
 const quadColorOffset = 4 * 4;
 const quadVertexCount = 6;
+//四角形の頂点データ
+/* prettier-ignore */
+const QuadVertexArray = new Float32Array([
+	// x, y, z, w, r, g, b, a
+	-1, 1, 0, 1, 0, 1, 0, 1,
+	-1, -1, 0, 1, 0, 0, 0, 1,
+	1, -1, 0, 1, 1, 0, 0, 1,
+	1, 1, 0, 1, 1, 1, 0, 1,
+]);
 
+const quadIndicesBuffer = g_device.createBuffer({
+	size: QuadVertexArray.byteLength,
+	usage: GPUBufferUsage.VERTEX,
+	mappedAtCreation: true,
+});
+
+new Float32Array(quadIndicesBuffer.getMappedRange()).set(QuadVertexArray);
+quadIndicesBuffer.unmap();
 //Contextの設定
 ctx.configure({
 	device: g_device,
 	format: presentationFormat,
 	alphaMode: "opaque",
 });
+
+const quadIndexArray = new Uint16Array([0, 1, 2, 0, 2, 3]);
+const indicesBuffer = g_device.createBuffer({
+	size: quadIndexArray.byteLength,
+	usage: GPUBufferUsage.INDEX,
+	mappedAtCreation: true,
+});
+new Uint16Array(indicesBuffer.getMappedRange()).set(quadIndexArray);
+indicesBuffer.unmap();
 
 //Render Pipeline
 const pipeline: GPURenderPipeline = g_device.createRenderPipeline({
@@ -100,27 +126,6 @@ function frame({
 	g_device.queue.submit([cmdEncoder.finish()]);
 }
 
-//四角形の頂点データ
-/* prettier-ignore */
-const QuadVertexArray = new Float32Array([
-	// x, y, z, w, r, g, b, a
-	-1, 1, 0, 1, 0, 1, 0, 1,
-	-1, -1, 0, 1, 0, 0, 0, 1,
-	1, -1, 0, 1, 1, 0, 0, 1,
-	-1, 1, 0, 1, 0, 1, 0, 1,
-	1, -1, 0, 1, 1, 0, 0, 1,
-	1, 1, 0, 1, 1, 1, 0, 1,
-]);
-
-const quadVertexBuffer = g_device.createBuffer({
-	size: QuadVertexArray.byteLength,
-	usage: GPUBufferUsage.VERTEX,
-	mappedAtCreation: true,
-});
-
-new Float32Array(quadVertexBuffer.getMappedRange()).set(QuadVertexArray);
-quadVertexBuffer.unmap();
-
 function quadFrame({
 	ctx,
 	pipeline,
@@ -143,8 +148,9 @@ function quadFrame({
 	const passEncoder = cmdEncoder.beginRenderPass(renderPassDesc);
 
 	passEncoder.setPipeline(pipeline);
-	passEncoder.setVertexBuffer(0, quadVertexBuffer);
-	passEncoder.draw(quadVertexCount, 1, 0, 0);
+	passEncoder.setVertexBuffer(0, quadIndicesBuffer);
+	passEncoder.setIndexBuffer(indicesBuffer, "uint16");
+	passEncoder.drawIndexed(quadIndexArray.length, 1, 0, 0, 0);
 	passEncoder.end();
 	g_device.queue.submit([cmdEncoder.finish()]);
 }

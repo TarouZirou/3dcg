@@ -1,3 +1,6 @@
+https://zenn.dev/emadurandal/books/cb6818fd3a1b2e
+↑ このサイトを参考にした。
+
 # WebGPU TypeScript Starter
 
 This small project sets up a minimal TypeScript workflow for WebGPU.
@@ -30,5 +33,6 @@ npm run dev
 ```
 
 Files:
-- `src/main.ts` — WebGPU initialization and single-frame clear
-- `tsconfig.json` — TypeScript config (outputs to `js/`)
+
+-   `src/main.ts` — WebGPU initialization and single-frame clear
+-   `tsconfig.json` — TypeScript config (outputs to `js/`)
