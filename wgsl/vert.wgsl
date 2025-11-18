@@ -13,10 +13,11 @@ struct VertexOutput {
 @vertex
 fn main(
 	@location(0) position: vec4<f32>,
-	@location(1) color: vec4<f32>
+	@location(1) color: vec4<f32>,
+	@location(2) pos: vec3<f32>
 ) -> VertexOutput {
 	var output : VertexOutput;
-	output.Position = uni.projectionMat * uni.viewMat * uni.modelMat * position;
+	output.Position = uni.projectionMat * uni.viewMat * uni.modelMat * (position + vec4<f32>(pos, 0.0));
 	output.fragColor = color;
 	return output;
 }

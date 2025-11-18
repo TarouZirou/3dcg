@@ -83,11 +83,12 @@ const uniBuffer = g_device.createBuffer({
 	usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 function getTransformationMatrix(uniformBuffer: GPUBuffer) {
+	// 行列計算
 	const projectionMat = mat4.create();
 	const viewMat = mat4.create();
 	const modelMat = mat4.create();
 	mat4.perspective(projectionMat, (2 * Math.PI) / 5, 1, 0.1, 100.0);
-	mat4.translate(viewMat, viewMat, vec3.fromValues(0, 0, -4));
+	mat4.translate(viewMat, viewMat, vec3.fromValues(0, 0, -10));
 	const now = Date.now() / 1000;
 	mat4.rotate(
 		modelMat,
@@ -95,7 +96,8 @@ function getTransformationMatrix(uniformBuffer: GPUBuffer) {
 		1,
 		vec3.fromValues(Math.sin(now), Math.cos(now), 0)
 	);
-	// Wrap the mat4 (number[]) into Float32Array before writing to the GPU buffer
+
+	// バッファに行列データを書き込む
 	g_device.queue.writeBuffer(
 		uniformBuffer,
 		4 * 16 * 0,
@@ -112,6 +114,26 @@ function getTransformationMatrix(uniformBuffer: GPUBuffer) {
 		new Float32Array(modelMat)
 	);
 }
+
+/* prettier-ignore */
+const instancePositions = new Float32Array([
+	-5, -5, 0,
+	-5, 0, 0,
+	-5, 5, 0,
+	0, -5, 0,
+	0, 0, 0,
+	0, 5, 0,
+	5, -5, 0,
+	5, 0, 0,
+	5, 5, 0,
+]);
+const instanceBuffer = g_device.createBuffer({
+	size: instancePositions.byteLength,
+	usage: GPUBufferUsage.VERTEX,
+	mappedAtCreation: true,
+});
+new Float32Array(instanceBuffer.getMappedRange()).set(instancePositions);
+instanceBuffer.unmap();
 
 //Render Pipeline
 const pipeline: GPURenderPipeline = g_device.createRenderPipeline({
@@ -136,6 +158,18 @@ const pipeline: GPURenderPipeline = g_device.createRenderPipeline({
 						shaderLocation: 1, // location(1)
 						offset: cubeColorOffset, // バッファの先頭からのオフセット
 						format: "float32x4",
+					},
+				],
+			},
+			{
+				arrayStride: 4 * 3,
+				stepMode: "instance",
+				attributes: [
+					{
+						// instance position
+						shaderLocation: 2,
+						offset: 0,
+						format: "float32x3",
 					},
 				],
 			},
@@ -174,7 +208,7 @@ const uniBindGroup = g_device.createBindGroup({
 	],
 });
 
-function quadFrame({
+function cubeFrame({
 	ctx,
 	pipeline,
 }: {
@@ -210,14 +244,21 @@ function quadFrame({
 
 	passEncoder.setPipeline(pipeline); //パイプライン設定
 	passEncoder.setVertexBuffer(0, CubeVertexBuffer); //頂点バッファ設定
+	passEncoder.setVertexBuffer(1, instanceBuffer); //インスタンスバッファ設定
 	passEncoder.setIndexBuffer(indicesBuffer, "uint16"); //インデックスバッファ設定
 	passEncoder.setBindGroup(0, uniBindGroup); // バインドグループを設定
-	passEncoder.drawIndexed(cubeIndexArray.length, 1, 0, 0, 0); //描画コマンド
+	passEncoder.drawIndexed(
+		cubeIndexArray.length,
+		Math.floor(instancePositions.length / 3),
+		0,
+		0,
+		0
+	); //描画コマンド
 	passEncoder.end(); //レンダーパス終了
 	g_device.queue.submit([cmdEncoder.finish()]); //コマンド送信
 	requestAnimationFrame(() => {
-		quadFrame({ ctx, pipeline });
+		cubeFrame({ ctx, pipeline });
 	});
 }
 
-quadFrame({ ctx, pipeline });
+cubeFrame({ ctx, pipeline });
